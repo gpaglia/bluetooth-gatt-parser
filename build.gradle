@@ -11,7 +11,7 @@ apply from: './platform.gradle'
 description = 'Evolution of github.com:sputnikdev/bluetooth-gatt-parser.git [gradle, java 11]'
 
 group = 'com.gpaglia.bluetooth'
-version = '0.0.0-SNAPSHOT' // semver.info
+version = semver.info
 semver {
     branches {
         branch {
