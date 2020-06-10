@@ -1,0 +1,40 @@
+// Project plugins and dependencies versions
+ext {
+    // plugins
+    parser__wusaSemverPluginVersion = '2.1.0'
+    parser__lombokPluginVersion = '5.1.0'
+
+    // slf4j
+    parser__slf4jVersion = '1.7.30'
+
+    // logback
+    parser__logbackVersion = '1.2.3'
+
+    // xstream
+    parser__xstreamVersion = '1.4.12'
+
+    // apache commons beanutils
+    parser__commonsBeanutilsVersion = '1.9.4'
+
+    // google guava
+    parser__guavaVersion = '29.0-jre'
+
+    // google gson
+    parser__gsonVersion = '2.8.6'
+
+    // junit5
+    parser__junitVersion = '5.6.2'
+
+    // hamcrest
+    parser__hamcrestVersion = '2.2'
+
+    // hamcrest-optional version
+    parser__hamcrestOptionalVersion = '2.0.0'
+
+    // mockito
+    parser__mockitoCoreVersion = '3.3.3'
+
+    // mockito jupiter
+    parser__mockitoJupiterVersion = '3.3.3'
+
+}

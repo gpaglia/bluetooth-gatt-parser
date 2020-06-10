@@ -1,0 +1,118 @@
+
+plugins {
+    id 'java-library'
+    id 'io.wusa.semver-git-plugin'
+    id 'maven-publish'
+    id 'io.freefair.lombok'
+}
+
+apply from: './platform.gradle'
+
+description = 'Evolution of github.com:sputnikdev/bluetooth-gatt-parser.git [gradle, java 11]'
+
+group = 'com.gpaglia.bluetooth'
+version = '0.0.0-SNAPSHOT' // semver.info
+semver {
+    branches {
+        branch {
+            regex = ".+"
+            incrementer = "MINOR_INCREMENTER"
+            formatter = {
+                "${semver.info.version.major}.${semver.info.version.minor}.${semver.info.version.patch}+build.${semver.info.count}.sha.${semver.info.shortCommit}"
+            }
+        }
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    withJavadocJar()
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += [
+            // jdk8 parameter names
+            '-parameters',
+            // '-proc:none',
+            '-Xlint:deprecation'
+    ]
+}
+
+tasks.withType(Test) {
+    useJUnitPlatform {
+        // options here
+    }
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+}
+
+
+lombok {
+    it.config['lombok.log.fieldName'] = 'LOGGER'
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+dependencies {
+
+    // slf4j
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: "${parser__slf4jVersion}"
+
+    // logback
+    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: "${parser__logbackVersion}"
+
+    // xstream
+    implementation group: 'com.thoughtworks.xstream', name: 'xstream', version: "${parser__xstreamVersion}"
+
+    // google gson
+    implementation group: 'com.google.code.gson', name: 'gson', version: "${parser__gsonVersion}"
+
+    // guava
+    implementation group: 'com.google.guava', name: 'guava', version: "${parser__guavaVersion}"
+
+    // apache commons beanutils
+    implementation group: 'commons-beanutils', name: 'commons-beanutils', version: "${parser__commonsBeanutilsVersion}"
+
+    // junit5 BOM
+    testImplementation platform("org.junit:junit-bom:${parser__junitVersion}")
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
+    testRuntimeOnly group: 'org.junit.platform', name:'junit-platform-launcher'
+
+    // slf4j-simple
+    testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: "${parser__slf4jVersion}"
+
+    // mockito
+    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: "${parser__mockitoCoreVersion}"
+
+    // https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: "${parser__mockitoJupiterVersion}"
+
+
+
+}
+
+// publishing
+publishing {
+    publications {
+        //noinspection GroovyAssignabilityCheck
+        dBusJavaLibrary(MavenPublication) {
+            from components.java
+            // artifact ...
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}

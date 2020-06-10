@@ -1,0 +1,21 @@
+// settings file for bluetooth-gatt-parser project
+pluginManagement {
+    this.apply from: './platform.gradle'
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+        jcenter()
+    }
+
+    resolutionStrategy {
+    }
+
+    //noinspection GroovyAssignabilityCheck
+    plugins {
+        id 'io.wusa.semver-git-plugin' version "${parser__wusaSemverPluginVersion}"
+        id 'io.freefair.lombok' version "${parser__lombokPluginVersion}"
+    }
+
+}
+
+rootProject.name = 'bluetooth-gatt-parser'
