@@ -21,10 +21,13 @@ package org.sputnikdev.bluetooth.gattparser;
  */
 
 import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.sputnikdev.bluetooth.gattparser.spec.Enumeration;
 import org.sputnikdev.bluetooth.gattparser.spec.Field;
@@ -40,20 +43,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class FieldHolderTest {
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private Field field;
 
-    @Before
+    @BeforeEach
     public void setUp() {
-        when(field.getFormat().isStruct()).thenReturn(false);
+        lenient().when(field.getFormat().isStruct()).thenReturn(false);
     }
 
     @Test
@@ -524,84 +525,105 @@ public class FieldHolderTest {
         fieldHolder.setDouble(77.1D);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMinimumInteger() {
         when(field.getMinimum()).thenReturn(76.9);
         when(field.getMaximum()).thenReturn(Double.MAX_VALUE);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setInteger(76);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setInteger(76);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMinimumLong() {
         when(field.getMinimum()).thenReturn(76.9);
         when(field.getMaximum()).thenReturn(Double.MAX_VALUE);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setLong(76L);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setLong(76L);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMinimumBigInteger() {
         when(field.getMinimum()).thenReturn(76.9);
         when(field.getMaximum()).thenReturn(Double.MAX_VALUE);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setBigInteger(BigInteger.valueOf(76));
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setBigInteger(BigInteger.valueOf(76));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMinimumFloat() {
         when(field.getMinimum()).thenReturn(76.9);
         when(field.getMaximum()).thenReturn(Double.MAX_VALUE);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setFloat(76.89F);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setFloat(76.89F);
+        });
+
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMinimumDouble() {
         when(field.getMinimum()).thenReturn(76.9);
         when(field.getMaximum()).thenReturn(Double.MAX_VALUE);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setDouble(76.89D);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setDouble(76.89D);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMaximumInteger() {
-        when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
+        lenient().when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
         when(field.getMaximum()).thenReturn(77.1);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setInteger(78);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setInteger(78);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMaximumLong() {
-        when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
+        lenient().when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
         when(field.getMaximum()).thenReturn(77.1);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setLong(78L);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setLong(78L);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMaximumBigInteger() {
-        when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
+        lenient().when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
         when(field.getMaximum()).thenReturn(77.1);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setBigInteger(BigInteger.valueOf(78));
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setBigInteger(BigInteger.valueOf(78));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMaximumFloat() {
-        when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
+        lenient().when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
         when(field.getMaximum()).thenReturn(77.1);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setFloat(77.11F);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setFloat(77.11F);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMaximumDouble() {
-        when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
+        lenient().when(field.getMinimum()).thenReturn(-Double.MAX_VALUE);
         when(field.getMaximum()).thenReturn(77.1);
-        FieldHolder fieldHolder = new FieldHolder(field);
-        fieldHolder.setDouble(77.11D);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            FieldHolder fieldHolder = new FieldHolder(field);
+            fieldHolder.setDouble(77.11D);
+        });
     }
 
     private void assertGetInteger(Integer expected, Integer decimalExponent, Integer binaryExponent,

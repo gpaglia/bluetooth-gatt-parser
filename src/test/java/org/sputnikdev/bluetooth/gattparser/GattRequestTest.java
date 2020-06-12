@@ -26,17 +26,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Test;
 import org.sputnikdev.bluetooth.gattparser.spec.Field;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.sputnikdev.bluetooth.gattparser.spec.FieldType;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@RunWith(MockitoJUnitRunner.class)
 public class GattRequestTest {
 
     private static final String CHARACTERISTIC_UUID = "char_uuid";
@@ -108,9 +106,11 @@ public class GattRequestTest {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructor() {
-        new GattRequest(CHARACTERISTIC_UUID, Collections.<Field>emptyList());
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            new GattRequest(CHARACTERISTIC_UUID, Collections.<Field>emptyList());
+        });
     }
 
     @Test
@@ -181,13 +181,15 @@ public class GattRequestTest {
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidFieldName() {
         List<Field> fields = new ArrayList<>();
         Field field1 = MockUtils.mockField("Field1", "C2");
         fields.add(field1);
-        GattRequest gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
-        gattRequest.setField("invalid name", 1);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            GattRequest gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
+            gattRequest.setField("invalid name", 1);
+        });
     }
 
 }

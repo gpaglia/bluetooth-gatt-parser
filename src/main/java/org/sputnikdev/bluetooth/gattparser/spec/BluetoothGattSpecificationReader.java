@@ -24,14 +24,19 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.basic.*;
+import com.thoughtworks.xstream.converters.collections.CollectionConverter;
+import com.thoughtworks.xstream.converters.reflection.ReflectionConverter;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
+import com.thoughtworks.xstream.security.NoTypePermission;
+import com.thoughtworks.xstream.security.WildcardTypePermission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -387,16 +392,56 @@ public class BluetoothGattSpecificationReader {
     }
 
     private Service getService(URL file) {
-        return getSpec(file);
+        return getSpec(file, Service.class);
     }
 
     private Characteristic getCharacteristic(URL file) {
-        return getSpec(file);
+        return getSpec(file, Characteristic.class);
     }
 
-    private <T> T getSpec(URL file) {
+    private <T> T getSpec(URL file, Class<T> clazz) {
         try {
+            /*
             XStream xstream = new XStream(new DomDriver());
+            // GP fix security warning
+            XStream.setupDefaultSecurity(xstream);
+            xstream.allowTypes(ALLOWED_CLASSES);
+            // end GP Fix
+            */
+            // ***
+            XStream xstream = new XStream(new DomDriver() {
+                @Override
+                public HierarchicalStreamWriter createWriter(Writer out) {
+                    return new PrettyPrintWriter(out, "    ");
+                }
+            }) {
+                /*
+                // only register the converters we need; other converters generate a private access warning in the console on Java9+...
+                @Override
+                protected void setupConverters() {
+                    registerConverter(new NullConverter(), PRIORITY_VERY_HIGH);
+                    registerConverter(new IntConverter(), PRIORITY_NORMAL);
+                    registerConverter(new FloatConverter(), PRIORITY_NORMAL);
+                    registerConverter(new DoubleConverter(), PRIORITY_NORMAL);
+                    registerConverter(new LongConverter(), PRIORITY_NORMAL);
+                    registerConverter(new ShortConverter(), PRIORITY_NORMAL);
+                    registerConverter(new BooleanConverter(), PRIORITY_NORMAL);
+                    registerConverter(new ByteConverter(), PRIORITY_NORMAL);
+                    registerConverter(new StringConverter(), PRIORITY_NORMAL);
+                    registerConverter(new DateConverter(), PRIORITY_NORMAL);
+                    registerConverter(new CollectionConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new ReflectionConverter(getMapper(), getReflectionProvider()), PRIORITY_VERY_LOW);
+                }
+                */
+            };
+            // setup proper security by limiting which classes can be loaded by XStream
+            xstream.addPermission(NoTypePermission.NONE);
+            xstream.addPermission(
+                new WildcardTypePermission(
+                    new String[] {this.getClass().getPackageName() + ".**"}
+                )
+            );
+            // ***
             xstream.autodetectAnnotations(true);
             xstream.processAnnotations(Bit.class);
             xstream.processAnnotations(BitField.class);
@@ -414,7 +459,7 @@ public class BluetoothGattSpecificationReader {
             xstream.processAnnotations(Properties.class);
             xstream.ignoreUnknownElements();
             xstream.setClassLoader(Characteristic.class.getClassLoader());
-            return (T) xstream.fromXML(file);
+            return (T) clazz.cast(xstream.fromXML(file));
         } catch (Exception e) {
             logger.error("Could not read file: " + file, e);
         }

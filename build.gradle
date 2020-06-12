@@ -1,6 +1,8 @@
 
+
 plugins {
     id 'java-library'
+    id 'groovy'
     id 'io.wusa.semver-git-plugin'
     id 'maven-publish'
     id 'io.freefair.lombok'
@@ -24,6 +26,34 @@ semver {
     }
 }
 
+// add the generated-sources folder [containing the gatt registry files] to resources
+// ... and for junit4 related tests [powermock]
+sourceSets {
+    main {
+        resources {
+            srcDirs += ['build/generated-sources/groovy']
+        }
+    }
+
+    junit4 {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+        }
+    }
+}
+
+configurations {
+    commonTestImplementation.extendsFrom(sourceSets.main.compileClasspath)
+    commonTestRuntimeOnly.extendsFrom(commonTestImplementation)
+
+    testImplementation.extendsFrom(commonTestImplementation)
+    testRuntimeOnly.extendsFrom(commonTestRuntimeOnly)
+
+    junit4Implementation.extendsFrom(commonTestImplementation)
+    junit4RuntimeOnly.extendsFrom(commonTestRuntimeOnly)
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
@@ -37,20 +67,41 @@ tasks.withType(JavaCompile) {
             // jdk8 parameter names
             '-parameters',
             // '-proc:none',
-            '-Xlint:deprecation'
+            '-Xlint:deprecation,unchecked'
     ]
 }
 
-tasks.withType(Test) {
+test {
     useJUnitPlatform {
         // options here
     }
 }
 
+task junit4Test(type: Test) {
+    description = 'Runs junit4-dependent tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.junit4.output.classesDirs
+    classpath = sourceSets.junit4.runtimeClasspath
+
+    useJUnit() {
+
+    }
+}
+
+check.dependsOn junit4Test
+
+
 tasks.withType(Javadoc) {
     options.encoding = 'UTF-8'
 }
 
+task regenerateGattRegistry() {
+    // println "***** basedir=" + project.getRootDir().toString() + ", builddir=" + project.getBuildDir().toString()
+    doLast {
+        GattRegistryGeneratorGradle.generate(project, true)
+    }
+}
 
 lombok {
     it.config['lombok.log.fieldName'] = 'LOGGER'
@@ -67,7 +118,7 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: "${parser__slf4jVersion}"
 
     // logback
-    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: "${parser__logbackVersion}"
+    // runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: "${parser__logbackVersion}"
 
     // xstream
     implementation group: 'com.thoughtworks.xstream', name: 'xstream', version: "${parser__xstreamVersion}"
@@ -81,25 +132,50 @@ dependencies {
     // apache commons beanutils
     implementation group: 'commons-beanutils', name: 'commons-beanutils', version: "${parser__commonsBeanutilsVersion}"
 
-    // junit5 BOM
-    testImplementation platform("org.junit:junit-bom:${parser__junitVersion}")
-
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter'
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params'
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
-    testRuntimeOnly group: 'org.junit.platform', name:'junit-platform-launcher'
+    // === Common test dependencies ===
 
     // slf4j-simple
-    testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: "${parser__slf4jVersion}"
+    commonTestImplementation group: 'org.slf4j', name: 'slf4j-simple', version: "${parser__slf4jVersion}"
+
+    // https://mvnrepository.com/artifact/org.hamcrest/hamcrest
+    commonTestImplementation group: 'org.hamcrest', name: 'hamcrest', version: "${parser__hamcrestVersion}"
 
     // mockito
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: "${parser__mockitoCoreVersion}"
+    commonTestImplementation group: 'org.mockito', name: 'mockito-core', version: "${parser__mockitoCoreVersion}"
 
     // https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
-    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: "${parser__mockitoJupiterVersion}"
+    commonTestImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: "${parser__mockitoJupiterVersion}"
 
+    // === junit5 test dependencies ===
 
+    // junit5 BOM
+    testImplementation platform("org.junit:junit-bom:${parser__junit5Version}")
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params'
+    testImplementation group: 'org.junit.platform', name:'junit-platform-runner'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher") {
+        because 'allows tests to run from IDEs that bundle older version of launcher'
+    }
+    /*
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine") {
+        because 'allows JUnit 3 and JUnit 4 tests to run'
+    }
+    */
+
+    // === junit4 test dependencies ===
+
+    // junit4
+    junit4Implementation group: 'junit', name: 'junit', version: "${parser__junit4Version}"
+
+    //PowerMock
+    // https://mvnrepository.com/artifact/org.powermock/powermock-module-junit4
+    junit4Implementation group: 'org.powermock', name: 'powermock-module-junit4', version: "${parser__powermockVersion}"
+
+    // https://mvnrepository.com/artifact/org.powermock/powermock-api-mockito2
+    junit4Implementation group: 'org.powermock', name: 'powermock-api-mockito2', version: "${parser__powermockVersion}"
 
 }
 

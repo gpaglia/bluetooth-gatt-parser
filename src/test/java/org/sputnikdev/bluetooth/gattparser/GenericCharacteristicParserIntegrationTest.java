@@ -20,7 +20,7 @@ package org.sputnikdev.bluetooth.gattparser;
  * #L%
  */
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.sputnikdev.bluetooth.gattparser.spec.Enumeration;
 
 import java.math.BigInteger;

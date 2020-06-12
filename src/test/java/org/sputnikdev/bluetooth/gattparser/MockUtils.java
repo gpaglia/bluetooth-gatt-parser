@@ -32,24 +32,22 @@ import org.sputnikdev.bluetooth.gattparser.spec.Field;
 import org.sputnikdev.bluetooth.gattparser.spec.FieldFormat;
 import org.sputnikdev.bluetooth.gattparser.spec.FieldType;
 
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class MockUtils {
 
     public static Field mockControlField(String name, boolean isMandatory, String... enumerations) {
         Field field = mock(Field.class);
-        when(field.getName()).thenReturn(name);
-        when(field.getEnumerations()).thenReturn(mock(Enumerations.class, RETURNS_DEEP_STUBS));
-        when(field.getMultiplier()).thenReturn(null);
-        when(field.getDecimalExponent()).thenReturn(null);
-        when(field.getBinaryExponent()).thenReturn(null);
-        when(field.getMinimum()).thenReturn(null);
-        when(field.getMaximum()).thenReturn(null);
+        lenient().when(field.getName()).thenReturn(name);
+        lenient().when(field.getEnumerations()).thenReturn(mock(Enumerations.class, RETURNS_DEEP_STUBS));
+        lenient().when(field.getMultiplier()).thenReturn(null);
+        lenient().when(field.getDecimalExponent()).thenReturn(null);
+        lenient().when(field.getBinaryExponent()).thenReturn(null);
+        lenient().when(field.getMinimum()).thenReturn(null);
+        lenient().when(field.getMaximum()).thenReturn(null);
         FieldFormat format = mock(FieldFormat.class);
-        when(field.getFormat()).thenReturn(format);
-        when(format.getType()).thenReturn(FieldType.SINT);
+        lenient().when(field.getFormat()).thenReturn(format);
+        lenient().when(format.getType()).thenReturn(FieldType.SINT);
         List<Enumeration> enums = new ArrayList<>();
         when(field.getEnumerations().getEnumerations()).thenReturn(enums);
         if (isMandatory) {
@@ -58,8 +56,8 @@ public class MockUtils {
         int i = 1;
         for (String enumeration : enumerations) {
             Enumeration en = mock(Enumeration.class);
-            when(en.getKey()).thenReturn(BigInteger.valueOf(i++));
-            when(en.getRequires()).thenReturn(enumeration);
+            lenient().when(en.getKey()).thenReturn(BigInteger.valueOf(i++));
+            lenient().when(en.getRequires()).thenReturn(enumeration);
             enums.add(en);
         }
         return field;
