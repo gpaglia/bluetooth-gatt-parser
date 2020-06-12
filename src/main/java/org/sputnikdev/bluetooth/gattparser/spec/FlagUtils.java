@@ -126,7 +126,7 @@ public final class FlagUtils {
     static Set<String> getAllOpCodes(Field field) {
         Set<String> result = new HashSet<>();
         if (field.getEnumerations() == null || field.getEnumerations().getEnumerations() == null) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
         for (Enumeration enumeration : field.getEnumerations().getEnumerations()) {
             result.add(enumeration.getRequires());

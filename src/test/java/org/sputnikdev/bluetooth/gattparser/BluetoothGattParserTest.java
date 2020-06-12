@@ -24,38 +24,36 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.sputnikdev.bluetooth.gattparser.spec.BluetoothGattSpecificationReader;
 import org.sputnikdev.bluetooth.gattparser.spec.Characteristic;
 import org.sputnikdev.bluetooth.gattparser.spec.Field;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@RunWith(MockitoJUnitRunner.class)
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
 public class BluetoothGattParserTest {
 
     private static final String CHARACTERISTIC_UUID = "2AA7";
 
     @Mock
     private BluetoothGattSpecificationReader specificationReader;
+
     @Mock
     private CharacteristicParser defaultParser;
+
     @Mock
     private Characteristic characteristic;
 
@@ -68,34 +66,35 @@ public class BluetoothGattParserTest {
     @Spy
     private BluetoothGattParser parser;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         byte[] data = new byte[]{0x0};
+
+        @SuppressWarnings("unchecked")
         LinkedHashMap<String, FieldHolder> holders = mock(LinkedHashMap.class);
 
-        when(specificationReader.getCharacteristicByUUID(CHARACTERISTIC_UUID)).thenReturn(characteristic);
-        when(characteristic.isValidForRead()).thenReturn(true);
-        when(characteristic.isValidForWrite()).thenReturn(true);
+        lenient().when(specificationReader.getCharacteristicByUUID(CHARACTERISTIC_UUID)).thenReturn(characteristic);
+        lenient().when(characteristic.isValidForRead()).thenReturn(true);
+        lenient().when(characteristic.isValidForWrite()).thenReturn(true);
 
-        when(defaultParser.parse(characteristic, data)).thenReturn(holders);
+        lenient().when(defaultParser.parse(characteristic, data)).thenReturn(holders);
 
-        when(gattRequest.getCharacteristicUUID()).thenReturn(CHARACTERISTIC_UUID);
+        lenient().when(gattRequest.getCharacteristicUUID()).thenReturn(CHARACTERISTIC_UUID);
     }
 
     @Test
     public void testParse() {
         GattResponse response = parser.parse(CHARACTERISTIC_UUID, data);
-        assertNotNull(response);
+        assertThat(response, notNullValue());
 
         verify(defaultParser, times(1)).parse(characteristic, data);
         verify(specificationReader, times(2)).getCharacteristicByUUID(CHARACTERISTIC_UUID);
     }
 
-    @Test(expected = CharacteristicFormatException.class)
     public void testParseNoValid() {
         when(characteristic.isValidForRead()).thenReturn(false);
 
-        parser.parse(CHARACTERISTIC_UUID, data);
+        Exception ex = assertThrows(CharacteristicFormatException.class, () -> parser.parse(CHARACTERISTIC_UUID, data));
     }
 
     @Test
@@ -104,7 +103,7 @@ public class BluetoothGattParserTest {
         parser.registerParser(CHARACTERISTIC_UUID, customParser);
 
         GattResponse response = parser.parse(CHARACTERISTIC_UUID, data);
-        assertNotNull(response);
+        assertThat(response, notNullValue());
 
         verify(defaultParser, times(0)).parse(characteristic, data);
         verify(specificationReader, times(2)).getCharacteristicByUUID(CHARACTERISTIC_UUID);
@@ -120,19 +119,18 @@ public class BluetoothGattParserTest {
         verify(defaultParser, times(1)).serialize(gattRequest.getAllFieldHolders());
     }
 
-    @Test(expected = IllegalArgumentException.class)
     public void testSerializeRequestNotValid() {
         doReturn(false).when(parser).validate(gattRequest);
-        parser.serialize(gattRequest, true);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> parser.serialize(gattRequest, true));
 
         verify(parser, times(1)).validate(gattRequest);
     }
 
-    @Test(expected = CharacteristicFormatException.class)
     public void testSerializeRequestNotValidForWrite() {
         when(characteristic.isValidForWrite()).thenReturn(false);
         doReturn(true).when(parser).validate(gattRequest);
-        parser.serialize(gattRequest, true);
+
+        Exception ex = assertThrows(CharacteristicFormatException.class, () -> parser.serialize(gattRequest, true));
 
         verify(parser, times(1)).validate(gattRequest);
     }
@@ -151,7 +149,7 @@ public class BluetoothGattParserTest {
 
     @Test
     public void testGetCharacteristic() {
-        assertEquals(characteristic, parser.getCharacteristic(CHARACTERISTIC_UUID));
+        assertThat(characteristic, is(parser.getCharacteristic(CHARACTERISTIC_UUID)));
         verify(specificationReader, times(1)).getCharacteristicByUUID(CHARACTERISTIC_UUID);
     }
 
@@ -164,7 +162,7 @@ public class BluetoothGattParserTest {
         when(specificationReader.getFields(characteristic)).thenReturn(fields);
 
         GattRequest request = parser.prepare(CHARACTERISTIC_UUID);
-        assertEquals(CHARACTERISTIC_UUID, request.getCharacteristicUUID());
+        assertThat(CHARACTERISTIC_UUID, is(request.getCharacteristicUUID()));
 
         verify(specificationReader, times(1)).getCharacteristicByUUID(CHARACTERISTIC_UUID);
         verify(specificationReader, times(1)).getFields(characteristic);
@@ -177,18 +175,18 @@ public class BluetoothGattParserTest {
         Field opControl = MockUtils.mockControlField("Op Code", false);
         fields.add(opControl);
         GattRequest gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
-        assertTrue(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(true));
         gattRequest.setField("Op Code", 1);
-        assertTrue(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(true));
 
         // mandatory op control field
         fields = new ArrayList<>();
         opControl = MockUtils.mockControlField("Op Code", true);
         fields.add(opControl);
         gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
-        assertFalse(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(false));
         gattRequest.setField("Op Code", 1);
-        assertTrue(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(true));
 
         // dependants
 
@@ -196,9 +194,9 @@ public class BluetoothGattParserTest {
         opControl = MockUtils.mockControlField("Op Code", true, "C1", "C2", "C3");
         fields.add(opControl);
         gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
-        assertFalse(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(false));
         gattRequest.setField("Op Code", 1);
-        assertFalse(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(false));
 
         fields = new ArrayList<>();
         opControl = MockUtils.mockControlField("Op Code", true, "C1", "C2", "C3");
@@ -206,18 +204,18 @@ public class BluetoothGattParserTest {
         fields.add(MockUtils.mockField("Field1", "C1"));
         gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
         gattRequest.setField("Op Code", 1);
-        assertFalse(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(false));
         gattRequest.setField("Field1", 1);
-        assertTrue(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(true));
         gattRequest.setField("Op Code", 2);
-        assertFalse(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(false));
 
         fields.add(MockUtils.mockField("Field2", "C2"));
         gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
         gattRequest.setField("Op Code", 2);
-        assertFalse(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(false));
         gattRequest.setField("Field2", 2);
-        assertTrue(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(true));
     }
 
     @Test
@@ -226,24 +224,24 @@ public class BluetoothGattParserTest {
         fields.add(MockUtils.mockField("Field1", "Mandatory"));
         fields.add(MockUtils.mockField("Field2", "C1", "C2"));
         GattRequest gattRequest = new GattRequest(CHARACTERISTIC_UUID, fields);
-        assertFalse(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(false));
         gattRequest.setField("Field1", 1);
-        assertTrue(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(true));
 
         gattRequest.setField("Field2", 2);
-        assertTrue(parser.validate(gattRequest));
+        assertThat(parser.validate(gattRequest), is(true));
     }
 
     @Test
     public void testParseSimple() {
         byte[] data = new byte[] {0x54, 0x3d, 0x32, 0x37, 0x2e, 0x36, 0x20, 0x48, 0x3d, 0x39, 0x32, 0xe, 0x36, 0x00};
-        assertEquals("[54, 3d, 32, 37, 2e, 36, 20, 48, 3d, 39, 32, 0e, 36, 00]", parser.parse(data, 16));
+        assertThat(parser.parse(data, 16), is("[54, 3d, 32, 37, 2e, 36, 20, 48, 3d, 39, 32, 0e, 36, 00]"));
     }
 
     @Test
     public void testSerializeSimple() {
         byte[] data = new byte[] {(byte) 0xfe, 0x3d, 0x32, 0x37, 0x2e, 0x36, 0x20, 0x48, 0x3d, 0x39, 0x32, 0xe, 0x36, 0x00};
-        assertArrayEquals(data, parser.serialize("[fe, 3d, 32, 37, 2e, 36, 20, 48, 3d, 39, 32, e, 36, 0]", 16));
+        assertThat(parser.serialize("[fe, 3d, 32, 37, 2e, 36, 20, 48, 3d, 39, 32, e, 36, 0]", 16), is(data));
     }
 
 }

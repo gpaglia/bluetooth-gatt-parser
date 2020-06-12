@@ -23,7 +23,10 @@ ext {
     parser__gsonVersion = '2.8.6'
 
     // junit5
-    parser__junitVersion = '5.6.2'
+    parser__junit5Version = '5.6.2'
+
+    // junit4
+    parser__junit4Version = '4.13'
 
     // hamcrest
     parser__hamcrestVersion = '2.2'
@@ -36,5 +39,8 @@ ext {
 
     // mockito jupiter
     parser__mockitoJupiterVersion = '3.3.3'
+
+    // powermock [junit4]
+    parser__powermockVersion = '2.0.7'
 
 }
