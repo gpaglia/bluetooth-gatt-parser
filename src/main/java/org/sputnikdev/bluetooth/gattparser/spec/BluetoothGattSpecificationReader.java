@@ -24,9 +24,15 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.basic.*;
-import com.thoughtworks.xstream.converters.collections.CollectionConverter;
+import com.thoughtworks.xstream.converters.collections.*;
+import com.thoughtworks.xstream.converters.extended.*;
+import com.thoughtworks.xstream.converters.reflection.ExternalizableConverter;
 import com.thoughtworks.xstream.converters.reflection.ReflectionConverter;
+import com.thoughtworks.xstream.converters.reflection.SerializableConverter;
+import com.thoughtworks.xstream.core.JVM;
+import com.thoughtworks.xstream.core.util.SelfStreamingInstanceChecker;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
@@ -415,10 +421,11 @@ public class BluetoothGattSpecificationReader {
                     return new PrettyPrintWriter(out, "    ");
                 }
             }) {
-                /*
+
                 // only register the converters we need; other converters generate a private access warning in the console on Java9+...
                 @Override
                 protected void setupConverters() {
+                    /*
                     registerConverter(new NullConverter(), PRIORITY_VERY_HIGH);
                     registerConverter(new IntConverter(), PRIORITY_NORMAL);
                     registerConverter(new FloatConverter(), PRIORITY_NORMAL);
@@ -431,8 +438,69 @@ public class BluetoothGattSpecificationReader {
                     registerConverter(new DateConverter(), PRIORITY_NORMAL);
                     registerConverter(new CollectionConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new ReflectionConverter(getMapper(), getReflectionProvider()), PRIORITY_VERY_LOW);
+                    */
+                    registerConverter(new ReflectionConverter(getMapper(), getReflectionProvider()), PRIORITY_VERY_LOW);
+
+                    registerConverter(new SerializableConverter(getMapper(), getReflectionProvider(), getClassLoaderReference()), PRIORITY_LOW);
+                    registerConverter(new ExternalizableConverter(getMapper(), getClassLoaderReference()), PRIORITY_LOW);
+
+                    registerConverter(new NullConverter(), PRIORITY_VERY_HIGH);
+                    registerConverter(new IntConverter(), PRIORITY_NORMAL);
+                    registerConverter(new FloatConverter(), PRIORITY_NORMAL);
+                    registerConverter(new DoubleConverter(), PRIORITY_NORMAL);
+                    registerConverter(new LongConverter(), PRIORITY_NORMAL);
+                    registerConverter(new ShortConverter(), PRIORITY_NORMAL);
+                    registerConverter((Converter)new CharConverter(), PRIORITY_NORMAL);
+                    registerConverter(new BooleanConverter(), PRIORITY_NORMAL);
+                    registerConverter(new ByteConverter(), PRIORITY_NORMAL);
+
+                    registerConverter(new StringConverter(), PRIORITY_NORMAL);
+                    registerConverter(new StringBufferConverter(), PRIORITY_NORMAL);
+                    registerConverter(new DateConverter(), PRIORITY_NORMAL);
+                    registerConverter(new BitSetConverter(), PRIORITY_NORMAL);
+                    registerConverter(new URIConverter(), PRIORITY_NORMAL);
+                    registerConverter(new URLConverter(), PRIORITY_NORMAL);
+                    registerConverter(new BigIntegerConverter(), PRIORITY_NORMAL);
+                    registerConverter(new BigDecimalConverter(), PRIORITY_NORMAL);
+
+                    registerConverter(new ArrayConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new CharArrayConverter(), PRIORITY_NORMAL);
+                    registerConverter(new CollectionConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new MapConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new TreeMapConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new TreeSetConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new SingletonCollectionConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new SingletonMapConverter(getMapper()), PRIORITY_NORMAL);
+                    registerConverter(new PropertiesConverter(), PRIORITY_NORMAL);
+                    registerConverter((Converter)new EncodedByteArrayConverter(), PRIORITY_NORMAL);
+
+                    registerConverter(new FileConverter(), PRIORITY_NORMAL);
+                    /*
+                    if (JVM.isSQLAvailable()) {
+                        registerConverter(new SqlTimestampConverter(), PRIORITY_NORMAL);
+                        registerConverter(new SqlTimeConverter(), PRIORITY_NORMAL);
+                        registerConverter(new SqlDateConverter(), PRIORITY_NORMAL);
+                    }
+                    */
+
+                    registerConverter(new JavaClassConverter(getClassLoaderReference()), PRIORITY_NORMAL);
+                    registerConverter(new JavaMethodConverter(getClassLoaderReference()), PRIORITY_NORMAL);
+                    registerConverter(new JavaFieldConverter(getClassLoaderReference()), PRIORITY_NORMAL);
+
+                    /*
+                    if (JVM.isAWTAvailable()) {
+                        registerConverter(new ColorConverter(), PRIORITY_NORMAL);
+                    }
+                    if (JVM.isSwingAvailable()) {
+                        registerConverter(new LookAndFeelConverter(getMapper(), getReflectionProvider()), PRIORITY_NORMAL);
+                    }
+                    */
+                    registerConverter(new LocaleConverter(), PRIORITY_NORMAL);
+                    registerConverter(new GregorianCalendarConverter(), PRIORITY_NORMAL);
+
+                    registerConverter(new SelfStreamingInstanceChecker(getConverterLookup(), this), PRIORITY_NORMAL);
                 }
-                */
+
             };
             // setup proper security by limiting which classes can be loaded by XStream
             xstream.addPermission(NoTypePermission.NONE);
