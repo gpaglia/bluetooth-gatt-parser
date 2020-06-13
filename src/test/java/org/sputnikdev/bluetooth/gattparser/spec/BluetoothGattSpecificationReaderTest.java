@@ -36,6 +36,8 @@ import static org.junit.Assert.assertTrue;
 
 public class BluetoothGattSpecificationReaderTest {
 
+    private FlagUtils flagUtils = new FlagUtils();
+
     @Spy
     private BluetoothGattSpecificationReader reader = new BluetoothGattSpecificationReader();
 
@@ -78,7 +80,7 @@ public class BluetoothGattSpecificationReaderTest {
                 characteristic.getInformativeText().getAbstract().trim());
         Value value = characteristic.getValue();
         assertNotNull(value);
-        assertNull(FlagUtils.getFlags(value.getFields()));
+        assertNull(flagUtils.getFlags(value.getFields()));
         assertEquals(1, value.getFields().size());
         Field field = value.getFields().get(0);
         assertEquals("Level", field.getName());
@@ -120,7 +122,7 @@ public class BluetoothGattSpecificationReaderTest {
 
         List<Field> fields = value.getFields();
         assertEquals("Flags", fields.get(0).getName());
-        assertEquals(fields.get(0), FlagUtils.getFlags(value.getFields()));
+        assertEquals(fields.get(0), flagUtils.getFlags(value.getFields()));
 
         Field field = fields.get(0);
         assertEquals("Mandatory", field.getRequirements().get(0));
@@ -174,7 +176,7 @@ public class BluetoothGattSpecificationReaderTest {
     @Test
     public void testGetFlags() {
         Characteristic characteristic = reader.getCharacteristicByUUID("2A1C");
-        Set<String> flags = FlagUtils.getAllFlags(FlagUtils.getFlags(characteristic.getValue().getFields()));
+        Set<String> flags = flagUtils.getFlags(characteristic.getValue().getFields()).getAllFlags();
         assertEquals(4, flags.size());
         assertTrue(flags.contains("C1"));
         assertTrue(flags.contains("C2"));
@@ -186,14 +188,14 @@ public class BluetoothGattSpecificationReaderTest {
     public void testGetRequirements() {
         Characteristic characteristic = reader.getCharacteristicByUUID("2A63");
         List<Field> fields = characteristic.getValue().getFields();
-        Field flags = FlagUtils.getFlags(fields);
+        Field flags = flagUtils.getFlags(fields);
         Set<String> requirements = reader.getRequirements(fields, flags);
         assertEquals(6, requirements.size());
         assertTrue(requirements.containsAll(Arrays.asList("Optional", "C1", "C2", "C3", "C4", "C5")));
 
         characteristic = reader.getCharacteristicByUUID("2A46");
         fields = characteristic.getValue().getFields();
-        flags = FlagUtils.getFlags(fields);
+        flags = flagUtils.getFlags(fields);
         requirements = reader.getRequirements(fields, flags);
         assertEquals(0, requirements.size());
     }

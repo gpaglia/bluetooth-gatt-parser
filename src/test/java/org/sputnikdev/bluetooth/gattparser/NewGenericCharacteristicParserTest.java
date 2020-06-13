@@ -20,16 +20,13 @@ package org.sputnikdev.bluetooth.gattparser;
  * #L%
  */
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Answers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.sputnikdev.bluetooth.gattparser.num.FloatingPointNumberFormatter;
 import org.sputnikdev.bluetooth.gattparser.num.RealNumberFormatter;
 import org.sputnikdev.bluetooth.gattparser.spec.*;
@@ -40,84 +37,94 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
-import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Answers.RETURNS_DEEP_STUBS;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyFloat;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
-
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ BluetoothGattParserFactory.class, FlagUtils.class })
-public class GenericCharacteristicParserTest {
+@ExtendWith(MockitoExtension.class)
+public class NewGenericCharacteristicParserTest {
 
   private static final String CHARACTERISTIC_UUID = "2A19";
 
   @Mock(answer = RETURNS_DEEP_STUBS)
   private Field flagField;
+
   @Mock(answer = RETURNS_DEEP_STUBS)
   private Characteristic characteristic;
+
   @Mock
   private RealNumberFormatter twosComplementNumberFormatter;
+
   @Mock
   private FloatingPointNumberFormatter ieee754NumberFormatter;
+
   @Mock
   private FloatingPointNumberFormatter ieee11073NumberFormatter;
 
   // this must be left as static initializer otherwise some tests will fail
-  private BluetoothGattSpecificationReader reader = mock(BluetoothGattSpecificationReader.class, RETURNS_DEEP_STUBS);
+  private BluetoothGattSpecificationReader reader;
 
-  @Spy
-  private GenericCharacteristicParser parser = new GenericCharacteristicParser(reader);
+  @Mock
+  private IGattParserConfiguration configuration;
 
-  @Before
+  private GenericCharacteristicParser charParser;
+
+  @Mock
+  private BluetoothGattParser gattParser;
+
+  @Mock
+  private IFlagUtils flagUtils;
+
+  @BeforeEach
   public void setUp() {
-    PowerMockito.mockStatic(BluetoothGattParserFactory.class, FlagUtils.class);
-    when(characteristic.getUuid()).thenReturn(CHARACTERISTIC_UUID);
-    when(BluetoothGattParserFactory.getTwosComplementNumberFormatter()).thenReturn(twosComplementNumberFormatter);
-    when(BluetoothGattParserFactory.getIEEE754FloatingPointNumberFormatter()).thenReturn(ieee754NumberFormatter);
-    when(BluetoothGattParserFactory.getIEEE11073FloatingPointNumberFormatter()).thenReturn(ieee11073NumberFormatter);
-    when(flagField.getName()).thenReturn("fLags");
+    // PowerMockito.mockStatic(BluetoothGattParserFactory.class, FlagUtils.class);
+    lenient().when(characteristic.getUuid()).thenReturn(CHARACTERISTIC_UUID);
+
+    // this must be left as static initializer otherwise some tests will fail
+    reader = mock(BluetoothGattSpecificationReader.class, RETURNS_DEEP_STUBS);
+
+    lenient().when(configuration.getTwosComplementNumberFormatter()).thenReturn(twosComplementNumberFormatter);
+    lenient().when(configuration.getIEEE754FloatingPointNumberFormatter()).thenReturn(ieee754NumberFormatter);
+    lenient().when(configuration.getIEEE11073FloatingPointNumberFormatter()).thenReturn(ieee11073NumberFormatter);
+    lenient().when(configuration.getGattSpecificationReader()).thenReturn(reader);
+    lenient().when(configuration.getGattParser()).thenReturn(gattParser);
+    lenient().when(configuration.getFlagUtils()).thenReturn(flagUtils);
+
+    charParser = spy(new GenericCharacteristicParser(configuration));
+
+    lenient().when(flagField.getName()).thenReturn("fLags");
   }
 
 
-  @Test(expected = CharacteristicFormatException.class)
+  @Test
   public void testParseNotValidForRead() throws CharacteristicFormatException {
     when(characteristic.isValidForRead()).thenReturn(Boolean.FALSE);
-    parser.parse(characteristic, new byte[]{ });
-    verify(characteristic.isValidForRead(), times(1));
+    Exception ex = assertThrows(CharacteristicFormatException.class, () -> {
+      charParser.parse(characteristic, new byte[]{ });
+      verify(characteristic.isValidForRead(), times(1));
+    });
   }
 
   @Test
   public void testParseFormats() throws CharacteristicFormatException, UnsupportedEncodingException {
-    when(ieee754NumberFormatter.deserializeSFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
-    when(ieee754NumberFormatter.deserializeFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
-    when(ieee754NumberFormatter.deserializeDouble(ArgumentMatchers.<BitSet>any())).thenReturn(0.0D);
+    lenient().when(ieee754NumberFormatter.deserializeSFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
+    lenient().when(ieee754NumberFormatter.deserializeFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
+    lenient().when(ieee754NumberFormatter.deserializeDouble(ArgumentMatchers.<BitSet>any())).thenReturn(0.0D);
 
-    when(ieee11073NumberFormatter.deserializeSFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
-    when(ieee11073NumberFormatter.deserializeFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
+    lenient().when(ieee11073NumberFormatter.deserializeSFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
+    lenient().when(ieee11073NumberFormatter.deserializeFloat(ArgumentMatchers.<BitSet>any())).thenReturn(0.0F);
 
-    when(twosComplementNumberFormatter.deserializeInteger(ArgumentMatchers.<BitSet>any(), anyInt(), anyBoolean())).thenReturn(0);
-    when(twosComplementNumberFormatter.deserializeLong(ArgumentMatchers.<BitSet>any(), anyInt(), anyBoolean())).thenReturn(0L);
-    when(twosComplementNumberFormatter.deserializeBigInteger(ArgumentMatchers.<BitSet>any(), anyInt(), anyBoolean())).thenReturn(BigInteger.ZERO);
+    lenient().when(twosComplementNumberFormatter.deserializeInteger(ArgumentMatchers.<BitSet>any(), anyInt(), anyBoolean())).thenReturn(0);
+    lenient().when(twosComplementNumberFormatter.deserializeLong(ArgumentMatchers.<BitSet>any(), anyInt(), anyBoolean())).thenReturn(0L);
+    lenient().when(twosComplementNumberFormatter.deserializeBigInteger(ArgumentMatchers.<BitSet>any(), anyInt(), anyBoolean())).thenReturn(BigInteger.ZERO);
 
 
     byte[] data = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -172,7 +179,7 @@ public class GenericCharacteristicParserTest {
   @Test
   public void testParse() throws CharacteristicFormatException, UnsupportedEncodingException {
     Object value = new Object();
-    doReturn(value).when(parser).parse(ArgumentMatchers.any(Field.class), ArgumentMatchers.any(byte[].class), anyInt());
+    doReturn(value).when(charParser).parse(ArgumentMatchers.any(Field.class), ArgumentMatchers.any(byte[].class), anyInt());
 
     List<Field> fields = new ArrayList<>();
     Field flagsField = MockUtils.mockFieldFormat("flags", "uint8");
@@ -187,26 +194,28 @@ public class GenericCharacteristicParserTest {
     when(characteristic.getValue().getFields()).thenReturn(fields);
     when(characteristic.isValidForRead()).thenReturn(true);
 
-    when(FlagUtils.isFlagsField(flagsField)).thenReturn(true);
-    when(FlagUtils.getReadFlags(anyList(), any(byte[].class))).thenReturn(
+    when(flagsField.isFlagField()).thenReturn(true);
+    when(flagUtils.getReadFlags(anyList(), any(byte[].class), any(RealNumberFormatter.class))).thenReturn(
         new HashSet<>(Arrays.asList("C1", "C3", "C4")));
     assertFieldsExist(value, "Field1", "Field4", "Field6");
 
-    when(FlagUtils.getReadFlags(anyList(), any(byte[].class))).thenReturn(
+    when(flagUtils.getReadFlags(anyList(), any(byte[].class), any(RealNumberFormatter.class))).thenReturn(
         new HashSet<>(Arrays.asList("C2")));
     assertFieldsExist(value, "Field3", "Field4", "Field6");
 
-    when(FlagUtils.getReadFlags(anyList(), any(byte[].class))).thenReturn(
+    when(flagUtils.getReadFlags(anyList(), any(byte[].class), any(RealNumberFormatter.class))).thenReturn(
         new HashSet<>(Arrays.asList("C1", "C2")));
     assertFieldsExist(value, "Field1", "Field2", "Field3", "Field4", "Field6");
   }
 
-  @Test(expected = CharacteristicFormatException.class)
+  @Test
   public void testParseNotEnoughData() throws CharacteristicFormatException, UnsupportedEncodingException {
     byte[] data = new byte[] {0};
-    assertParseFormat(0, "8bit", data);
+    assertThrows(CharacteristicFormatException.class, () -> {
+      assertParseFormat(0, "8bit", data);
+      assertParseFormat(0, "9bit", data);
 
-    assertParseFormat(0, "9bit", data);
+    });
   }
 
   @Test
@@ -220,7 +229,7 @@ public class GenericCharacteristicParserTest {
     when(characteristic.getValue().getFields()).thenReturn(fields);
     when(characteristic.isValidForRead()).thenReturn(true);
 
-    parser.parse(characteristic, data);
+    charParser.parse(characteristic, data);
 
     verify(twosComplementNumberFormatter, times(1)).deserializeLong(BitSet.valueOf(data).get(0, 40), 40, false);
     verify(twosComplementNumberFormatter, times(1)).deserializeInteger(BitSet.valueOf(data).get(40, 64), 24, false);
@@ -253,13 +262,13 @@ public class GenericCharacteristicParserTest {
     List<Field> innerFields = new ArrayList<>();
     Field innerFlags = MockUtils.mockFieldFormat("flags", "8bit", new String[] {});
     BitField bitField = mock(BitField.class);
-    when(innerFlags.getBitField()).thenReturn(bitField);
+    lenient().when(innerFlags.getBitField()).thenReturn(bitField);
     List<Bit> bits = new ArrayList<Bit>() {{
       add(MockUtils.mockBit(0, "C1"));
       add(MockUtils.mockBit(1, "C2"));
       add(MockUtils.mockBit(2, "C3"));
     }};
-    when(bitField.getBits()).thenReturn(bits);
+    lenient().when(bitField.getBits()).thenReturn(bits);
     innerFields.add(innerFlags);
     innerFields.add(MockUtils.mockFieldFormat("InnerField1", "sint8", "C1"));
     innerFields.add(MockUtils.mockFieldFormat("InnerField0", "uint16", "C3"));
@@ -267,11 +276,11 @@ public class GenericCharacteristicParserTest {
     Characteristic referenced = mock(Characteristic.class, RETURNS_DEEP_STUBS);
     when(referenced.getValue().getFields()).thenReturn(innerFields);
     when(referenced.isValidForRead()).thenReturn(true);
-    when(FlagUtils.getReadFlags(anyList(), any(byte[].class))).thenReturn(flags);
-    when(FlagUtils.isFlagsField(innerFlags)).thenReturn(true);
+    when(flagUtils.getReadFlags(anyList(), any(byte[].class), any(RealNumberFormatter.class))).thenReturn(flags);
+    when(innerFlags.isFlagField()).thenReturn(true);
     when(reader.getCharacteristicByType("org.bluetooth.characteristic_id")).thenReturn(referenced);
 
-    LinkedHashMap<String, FieldHolder> result = parser.parse(characteristic, data);
+    LinkedHashMap<String, FieldHolder> result = charParser.parse(characteristic, data);
     // assertEquals(4, result.size());
     assertThat(result, aMapWithSize(4));
 
@@ -308,7 +317,7 @@ public class GenericCharacteristicParserTest {
     request.setField("Field3", str);
     request.setField("Field4", sint4);
 
-    byte[] data = parser.serialize(request.getAllFieldHolders());
+    byte[] data = charParser.serialize(request.getAllFieldHolders());
     // assertNotNull(data);
     assertThat(data, notNullValue());
 
@@ -333,11 +342,11 @@ public class GenericCharacteristicParserTest {
     request.setField("Field1", true);
     request.setField("Field2", false);
 
-    byte[] data = parser.serialize(request.getAllFieldHolders());
+    byte[] data = charParser.serialize(request.getAllFieldHolders());
     // assertNotNull(data);
     assertThat(data, notNullValue());
 
-    verify(parser, times(1)).serialize(true);
+    verify(charParser, times(1)).serialize(true);
     // assertTrue((data[0] & 1) == 1);
     assertThat(data[0] & 1, is(1));
     // assertTrue(((data[0] >>> 1) & 1) == 0);
@@ -372,7 +381,7 @@ public class GenericCharacteristicParserTest {
     request.setField("Field4", uint64);
     request.setField("Field5", sint128);
 
-    byte[] data = parser.serialize(request.getAllFieldHolders());
+    byte[] data = charParser.serialize(request.getAllFieldHolders());
     // assertNotNull(data);
     assertThat(data, notNullValue());
 
@@ -415,7 +424,7 @@ public class GenericCharacteristicParserTest {
     GattRequest request = new GattRequest(CHARACTERISTIC_UUID, fields);
     request.setField("Field1", sint32);
 
-    byte[] data = parser.serialize(request.getAllFieldHolders());
+    byte[] data = charParser.serialize(request.getAllFieldHolders());
     // assertArrayEquals(new byte[] {0}, data);
     assertThat(data, is(new byte[] {0}));
   }
@@ -433,7 +442,7 @@ public class GenericCharacteristicParserTest {
     request.setField("Field1", utf8);
     request.setField("Field2", utf16);
 
-    byte[] data = parser.serialize(request.getAllFieldHolders());
+    byte[] data = charParser.serialize(request.getAllFieldHolders());
     BitSet bitSet = BitSet.valueOf(data);
     int utf8Length = BitSet.valueOf(utf8.getBytes()).length();
     // assertEquals(utf8, new String(bitSet.get(0, utf8Length).toByteArray()));
@@ -473,7 +482,7 @@ public class GenericCharacteristicParserTest {
     request.setField("Field3", sfloat);
     request.setField("Field4", _float);
 
-    byte[] data = parser.serialize(request.getAllFieldHolders());
+    byte[] data = charParser.serialize(request.getAllFieldHolders());
     // assertNotNull(data);
     assertThat(data, notNullValue());
 
@@ -514,10 +523,10 @@ public class GenericCharacteristicParserTest {
     byte[] field2Data = {12, 24, 56};
     BitSet data = new BitSet();
     data.set(0);
-    parser.concat(data, BitSet.valueOf(field2Data), 1, field2Data.length * 8);
+    charParser.concat(data, BitSet.valueOf(field2Data), 1, field2Data.length * 8);
 
     // performing the test to check if we can parse data
-    LinkedHashMap<String, FieldHolder> response = parser.parse(characteristic, data.toByteArray());
+    LinkedHashMap<String, FieldHolder> response = charParser.parse(characteristic, data.toByteArray());
     // assertEquals(2, response.size());
     assertThat(response, aMapWithSize(2));
 
@@ -537,13 +546,13 @@ public class GenericCharacteristicParserTest {
 
     // performing the test to check if we can serialize holders, the initial data for the previous test
     // should match to the result
-    byte[] serialized = parser.serialize(Arrays.asList(holder1, holder2));
+    byte[] serialized = charParser.serialize(Arrays.asList(holder1, holder2));
     // assertArrayEquals(data.toByteArray(), serialized);
     assertThat(data.toByteArray(), is(serialized));
   }
 
   private void assertFieldsExist(Object value, String... fieldNames) {
-    Map<String, FieldHolder> values = parser.parse(characteristic, new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0});
+    Map<String, FieldHolder> values = charParser.parse(characteristic, new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0});
     // assertEquals(fieldNames.length, values.size());
     assertThat(values, aMapWithSize(fieldNames.length));
 
@@ -564,13 +573,13 @@ public class GenericCharacteristicParserTest {
     List<Field> fields = new ArrayList<>();
     String name = format + "Field";
     Field field = MockUtils.mockFieldFormat(name, format);
-    when(field.getDecimalExponent()).thenReturn(exponent);
+    lenient().when(field.getDecimalExponent()).thenReturn(exponent);
     fields.add(field);
-    when(reader.getFields(characteristic)).thenReturn(fields);
+    lenient().when(reader.getFields(characteristic)).thenReturn(fields);
     //when(characteristic.getValue().getFlags()).thenReturn(null);
-    when(characteristic.getValue().getFields()).thenReturn(fields);
-    when(characteristic.isValidForRead()).thenReturn(true);
-    Map<String, FieldHolder> values = parser.parse(characteristic, bytes);
+    lenient().when(characteristic.getValue().getFields()).thenReturn(fields);
+    lenient().when(characteristic.isValidForRead()).thenReturn(true);
+    Map<String, FieldHolder> values = charParser.parse(characteristic, bytes);
     // assertEquals(1, values.size());
     assertThat(values, aMapWithSize(1));
 
@@ -599,19 +608,19 @@ public class GenericCharacteristicParserTest {
     fields.add(field1);
     Field field2 = MockUtils.mockFieldFormat("Field2", format);
     fields.add(field2);
-    when(reader.getFields(characteristic)).thenReturn(fields);
-    when(characteristic.getValue().getFields()).thenReturn(fields);
-    when(characteristic.isValidForRead()).thenReturn(true);
+    lenient().when(reader.getFields(characteristic)).thenReturn(fields);
+    lenient().when(characteristic.getValue().getFields()).thenReturn(fields);
+    lenient().when(characteristic.isValidForRead()).thenReturn(true);
 
     // data that we are testing
     String field2Text = "Test!";
     byte[] field2Data = field2Text.getBytes(encoding);
     BitSet data = new BitSet();
     data.set(0, 5);
-    parser.concat(data, BitSet.valueOf(field2Data), 5, field2Data.length * 8);
+    charParser.concat(data, BitSet.valueOf(field2Data), 5, field2Data.length * 8);
 
     // performing the test to check if we can parse data
-    LinkedHashMap<String, FieldHolder> response = parser.parse(characteristic, data.toByteArray());
+    LinkedHashMap<String, FieldHolder> response = charParser.parse(characteristic, data.toByteArray());
     // assertEquals(2, response.size());
     assertThat(response, aMapWithSize(2));
 
@@ -631,7 +640,7 @@ public class GenericCharacteristicParserTest {
 
     // performing the test to check if we can serialize holders, the initial data for the previous test
     // should match to the result
-    byte[] serialized = parser.serialize(Arrays.asList(holder1, holder2));
+    byte[] serialized = charParser.serialize(Arrays.asList(holder1, holder2));
     // assertArrayEquals(data.toByteArray(), serialized);
     assertThat(data.toByteArray(), is(serialized));
   }

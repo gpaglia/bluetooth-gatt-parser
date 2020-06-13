@@ -20,23 +20,12 @@ package org.sputnikdev.bluetooth.gattparser;
  * #L%
  */
 
-import org.apache.commons.beanutils.converters.AbstractConverter;
-import org.apache.commons.beanutils.converters.ArrayConverter;
-import org.apache.commons.beanutils.converters.BigDecimalConverter;
-import org.apache.commons.beanutils.converters.BigIntegerConverter;
-import org.apache.commons.beanutils.converters.BooleanConverter;
-import org.apache.commons.beanutils.converters.ByteConverter;
-import org.apache.commons.beanutils.converters.DoubleConverter;
-import org.apache.commons.beanutils.converters.FloatConverter;
-import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.commons.beanutils.converters.LongConverter;
-import org.apache.commons.beanutils.converters.StringConverter;
+import org.apache.commons.beanutils.converters.*;
 import org.sputnikdev.bluetooth.gattparser.num.TwosComplementNumberFormatter;
 import org.sputnikdev.bluetooth.gattparser.spec.Enumeration;
 import org.sputnikdev.bluetooth.gattparser.spec.Field;
 import org.sputnikdev.bluetooth.gattparser.spec.FieldFormat;
 import org.sputnikdev.bluetooth.gattparser.spec.FieldType;
-import org.sputnikdev.bluetooth.gattparser.spec.FlagUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -353,7 +342,7 @@ public class FieldHolder {
         } else {
             key = getBigInteger();
         }
-        return FlagUtils.getEnumeration(field, key).orElse(null);
+        return field.getEnumeration(key).orElse(null);
     }
 
     /**

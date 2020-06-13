@@ -92,21 +92,21 @@ public class MockUtils {
 
     public static Bit mockBit(int index, String flag) {
         Bit bit = mock(Bit.class);
-        when(bit.getIndex()).thenReturn(index);
-        when(bit.getSize()).thenReturn(1);
-        when(bit.getFlag((byte) 1)).thenReturn(flag);
+        lenient().when(bit.getIndex()).thenReturn(index);
+        lenient().when(bit.getSize()).thenReturn(1);
+        lenient().when(bit.getFlag((byte) 1)).thenReturn(flag);
         return bit;
     }
 
     public static Field mockFieldFormat(String name, String format) {
         Field field = mock(Field.class);
-        when(field.getFormat()).thenReturn(FieldFormat.valueOf(format));
-        when(field.getName()).thenReturn(name);
-        when(field.getMultiplier()).thenReturn(null);
-        when(field.getDecimalExponent()).thenReturn(null);
-        when(field.getBinaryExponent()).thenReturn(null);
-        when(field.getMinimum()).thenReturn(null);
-        when(field.getMaximum()).thenReturn(null);
+        lenient().when(field.getFormat()).thenReturn(FieldFormat.valueOf(format));
+        lenient().when(field.getName()).thenReturn(name);
+        lenient().when(field.getMultiplier()).thenReturn(null);
+        lenient().when(field.getDecimalExponent()).thenReturn(null);
+        lenient().when(field.getBinaryExponent()).thenReturn(null);
+        lenient().when(field.getMinimum()).thenReturn(null);
+        lenient().when(field.getMaximum()).thenReturn(null);
         return field;
     }
 
