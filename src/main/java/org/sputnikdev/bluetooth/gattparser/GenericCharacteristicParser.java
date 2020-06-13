@@ -24,21 +24,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sputnikdev.bluetooth.gattparser.num.FloatingPointNumberFormatter;
 import org.sputnikdev.bluetooth.gattparser.num.RealNumberFormatter;
-import org.sputnikdev.bluetooth.gattparser.spec.BluetoothGattSpecificationReader;
-import org.sputnikdev.bluetooth.gattparser.spec.Characteristic;
-import org.sputnikdev.bluetooth.gattparser.spec.Field;
-import org.sputnikdev.bluetooth.gattparser.spec.FieldFormat;
-import org.sputnikdev.bluetooth.gattparser.spec.FieldType;
-import org.sputnikdev.bluetooth.gattparser.spec.FlagUtils;
+import org.sputnikdev.bluetooth.gattparser.spec.*;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A generic implementation of a GATT characteristic parser capable of reading and writing standard/approved
@@ -53,10 +43,11 @@ import java.util.Set;
 public class GenericCharacteristicParser implements CharacteristicParser {
 
     private final Logger logger = LoggerFactory.getLogger(GenericCharacteristicParser.class);
-    private final BluetoothGattSpecificationReader reader;
+    private final IGattParserConfiguration config;
 
-    GenericCharacteristicParser(BluetoothGattSpecificationReader reader) {
-        this.reader = reader;
+
+    GenericCharacteristicParser(IGattParserConfiguration config) {
+        this.config = config;
     }
 
     @Override
@@ -68,7 +59,7 @@ public class GenericCharacteristicParser implements CharacteristicParser {
 
         int offset = 0;
         List<Field> fields = characteristic.getValue().getFields();
-        Set<String> requires = FlagUtils.getReadFlags(fields, raw);
+        Set<String> requires = config.getFlagUtils().getReadFlags(fields, raw, config.getTwosComplementNumberFormatter());
         requires.add("Mandatory");
         for (Field field : fields) {
             List<String> requirements = field.getRequirements();
@@ -78,7 +69,10 @@ public class GenericCharacteristicParser implements CharacteristicParser {
             }
             if (field.getReference() != null) {
                 LinkedHashMap<String, FieldHolder> subCharacteristic =
-                        parse(reader.getCharacteristicByType(field.getReference().trim()), getRemainder(raw, offset));
+                        parse(
+                            config.getGattSpecificationReader().getCharacteristicByType(field.getReference().trim()),
+                            getRemainder(raw, offset)
+                        );
                 result.putAll(subCharacteristic);
                 int size = getSize(subCharacteristic.values());
                 if (size == FieldFormat.FULL_SIZE) {
@@ -86,7 +80,7 @@ public class GenericCharacteristicParser implements CharacteristicParser {
                 }
                 offset += size;
             } else {
-                if (FlagUtils.isFlagsField(field)) {
+                if (field.isFlagField()) {
                     // skipping flags field
                     offset += field.getFormat().getSize();
                     continue;
@@ -133,9 +127,9 @@ public class GenericCharacteristicParser implements CharacteristicParser {
             case UINT: return deserializeReal(raw, offset, size, false);
             case SINT: return deserializeReal(raw, offset, size, true);
             case FLOAT_IEE754: return deserializeFloat(
-                    BluetoothGattParserFactory.getIEEE754FloatingPointNumberFormatter(), raw, offset, size);
+                    config.getIEEE754FloatingPointNumberFormatter(), raw, offset, size);
             case FLOAT_IEE11073: return deserializeFloat(
-                    BluetoothGattParserFactory.getIEEE11073FloatingPointNumberFormatter(), raw, offset, size);
+                    config.getIEEE11073FloatingPointNumberFormatter(), raw, offset, size);
             case UTF8S: return deserializeString(raw, offset, "UTF-8");
             case UTF16S: return deserializeString(raw, offset, "UTF-16");
             case STRUCT: return BitSet.valueOf(raw).get(offset, offset + raw.length * 8).toByteArray();
@@ -167,9 +161,9 @@ public class GenericCharacteristicParser implements CharacteristicParser {
             case UINT:
             case SINT: return serializeReal(holder);
             case FLOAT_IEE754: return serializeFloat(
-                    BluetoothGattParserFactory.getIEEE754FloatingPointNumberFormatter(), holder);
+                    config.getIEEE754FloatingPointNumberFormatter(), holder);
             case FLOAT_IEE11073: return serializeFloat(
-                    BluetoothGattParserFactory.getIEEE11073FloatingPointNumberFormatter(), holder);
+                    config.getIEEE11073FloatingPointNumberFormatter(), holder);
             case UTF8S: return serializeString(holder, "UTF-8");
             case UTF16S: return serializeString(holder, "UTF-16");
             case STRUCT: return BitSet.valueOf((byte[]) holder.getRawValue());
@@ -216,7 +210,7 @@ public class GenericCharacteristicParser implements CharacteristicParser {
     }
 
     private BitSet serializeReal(FieldHolder holder) {
-        RealNumberFormatter realNumberFormatter = BluetoothGattParserFactory.getTwosComplementNumberFormatter();
+        RealNumberFormatter realNumberFormatter = config.getTwosComplementNumberFormatter();
         int size = holder.getField().getFormat().getSize();
         boolean signed = holder.getField().getFormat().getType() == FieldType.SINT;
         if ((signed && size <= 32) || (!signed && size < 32)) {
@@ -229,7 +223,7 @@ public class GenericCharacteristicParser implements CharacteristicParser {
     }
 
     private Object deserializeReal(byte[] raw, int offset, int size, boolean signed) {
-        RealNumberFormatter realNumberFormatter = BluetoothGattParserFactory.getTwosComplementNumberFormatter();
+        RealNumberFormatter realNumberFormatter = config.getTwosComplementNumberFormatter();
         int toIndex = offset + size;
         if ((signed && size <= 32) || (!signed && size < 32)) {
             return realNumberFormatter.deserializeInteger(BitSet.valueOf(raw).get(offset, toIndex), size, signed);

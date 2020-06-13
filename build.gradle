@@ -34,13 +34,6 @@ sourceSets {
             srcDirs += ['build/generated-sources/groovy']
         }
     }
-
-    junit4 {
-        java {
-            compileClasspath += main.output + test.output
-            runtimeClasspath += main.output + test.output
-        }
-    }
 }
 
 configurations {
@@ -50,8 +43,6 @@ configurations {
     testImplementation.extendsFrom(commonTestImplementation)
     testRuntimeOnly.extendsFrom(commonTestRuntimeOnly)
 
-    junit4Implementation.extendsFrom(commonTestImplementation)
-    junit4RuntimeOnly.extendsFrom(commonTestRuntimeOnly)
 }
 
 java {
@@ -76,20 +67,6 @@ test {
         // options here
     }
 }
-
-task junit4Test(type: Test) {
-    description = 'Runs junit4-dependent tests.'
-    group = 'verification'
-
-    testClassesDirs = sourceSets.junit4.output.classesDirs
-    classpath = sourceSets.junit4.runtimeClasspath
-
-    useJUnit() {
-
-    }
-}
-
-check.dependsOn junit4Test
 
 
 tasks.withType(Javadoc) {
@@ -165,25 +142,13 @@ dependencies {
     }
     */
 
-    // === junit4 test dependencies ===
-
-    // junit4
-    junit4Implementation group: 'junit', name: 'junit', version: "${parser__junit4Version}"
-
-    //PowerMock
-    // https://mvnrepository.com/artifact/org.powermock/powermock-module-junit4
-    junit4Implementation group: 'org.powermock', name: 'powermock-module-junit4', version: "${parser__powermockVersion}"
-
-    // https://mvnrepository.com/artifact/org.powermock/powermock-api-mockito2
-    junit4Implementation group: 'org.powermock', name: 'powermock-api-mockito2', version: "${parser__powermockVersion}"
-
 }
 
 // publishing
 publishing {
     publications {
         //noinspection GroovyAssignabilityCheck
-        dBusJavaLibrary(MavenPublication) {
+        gattParser(MavenPublication) {
             from components.java
             // artifact ...
         }

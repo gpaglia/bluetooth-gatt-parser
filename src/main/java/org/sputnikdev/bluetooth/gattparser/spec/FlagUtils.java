@@ -21,6 +21,7 @@ package org.sputnikdev.bluetooth.gattparser.spec;
  */
 
 import org.sputnikdev.bluetooth.gattparser.BluetoothGattParserFactory;
+import org.sputnikdev.bluetooth.gattparser.num.RealNumberFormatter;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -38,16 +39,17 @@ import java.util.stream.Stream;
  *
  * @author Vlad Kolotov
  */
-public final class FlagUtils {
+public final class FlagUtils implements IFlagUtils {
 
-    private FlagUtils() { }
+    public FlagUtils() { }
 
-    public static Set<String> getReadFlags(List<Field> fields, byte[] data) {
+    @Override
+    public Set<String> getReadFlags(List<Field> fields, byte[] data, RealNumberFormatter formatter) {
         Set<String> flags = new HashSet<>();
         int index = 0;
         for (Field field : fields) {
-            if (isFlagsField(field)) {
-                int[] values = parseReadFlags(field, data, index);
+            if (field.isFlagField()) {
+                int[] values = field.parseReadFlags(data, index, formatter);
                 int bitIndex = 0;
                 for (Bit bit : field.getBitField().getBits()) {
                     String requires = bit.getFlag((byte) values[bitIndex++]);
@@ -73,7 +75,7 @@ public final class FlagUtils {
         }
         return flags;
     }
-
+    /*
     public static String getRequires(Field field, BigInteger key) {
         return getEnumeration(field, key).map(Enumeration::getRequires).orElse(null);
     }
@@ -134,36 +136,38 @@ public final class FlagUtils {
         return result;
     }
 
-    static Field getFlags(List<Field> fields) {
-        for (Field field : fields) {
-            if (isFlagsField(field)) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    static Field getOpCodes(List<Field> fields) {
-        for (Field field : fields) {
-            if (isOpCodesField(field)) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    static int[] parseReadFlags(Field flagsField, byte[] raw, int index) {
+    static int[] parseReadFlags(Field flagsField, byte[] raw, int index, RealNumberFormatter formatter) {
         BitSet bitSet = BitSet.valueOf(raw).get(index, index + flagsField.getFormat().getSize());
         List<Bit> bits = flagsField.getBitField().getBits();
         int[] flags = new int[bits.size()];
         int offset = 0;
         for (int i = 0; i < bits.size(); i++) {
             int size = bits.get(i).getSize();
-            flags[i] = BluetoothGattParserFactory.getTwosComplementNumberFormatter().deserializeInteger(
-                bitSet.get(offset, offset + size), size, false);
+            flags[i] = formatter.deserializeInteger(bitSet.get(offset, offset + size), size, false);
             offset += size;
         }
         return flags;
     }
+    */
+
+
+    Field getFlags(List<Field> fields) {
+        for (Field field : fields) {
+            if (field.isFlagField()) {
+                return field;
+            }
+        }
+        return null;
+    }
+
+    Field getOpCodes(List<Field> fields) {
+        for (Field field : fields) {
+            if (field.isOpCodesField()) {
+                return field;
+            }
+        }
+        return null;
+    }
+
 
 }

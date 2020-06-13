@@ -321,15 +321,15 @@ public class BluetoothGattSpecificationReader {
         Field flags = null;
         Field opCodes = null;
         for (Field field : fields) {
-            if (FlagUtils.isFlagsField(field)) {
+            if (field.isFlagField()) {
                 flags = field;
             }
-            if (FlagUtils.isOpCodesField(field)) {
+            if (field.isOpCodesField()) {
                 opCodes = field;
             }
         }
-        Set<String> readFlags = flags != null ? FlagUtils.getAllFlags(flags) : Collections.emptySet();
-        Set<String> writeFlags = opCodes != null ? FlagUtils.getAllOpCodes(opCodes) : Collections.emptySet();
+        Set<String> readFlags = flags != null ? flags.getAllFlags() : Collections.emptySet();
+        Set<String> writeFlags = opCodes != null ? opCodes.getAllOpCodes() : Collections.emptySet();
         Set<String> requirements = getRequirements(fields, flags);
 
         Set<String> unfulfilledReadRequirements = new HashSet<>(requirements);

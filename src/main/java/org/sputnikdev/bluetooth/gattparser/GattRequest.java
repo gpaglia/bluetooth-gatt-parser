@@ -23,15 +23,9 @@ package org.sputnikdev.bluetooth.gattparser;
 import org.sputnikdev.bluetooth.gattparser.spec.BitField;
 import org.sputnikdev.bluetooth.gattparser.spec.Enumeration;
 import org.sputnikdev.bluetooth.gattparser.spec.Field;
-import org.sputnikdev.bluetooth.gattparser.spec.FlagUtils;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
@@ -254,7 +248,7 @@ public class GattRequest {
     }
 
     private FieldHolder findOpCodesField() {
-        return holders.values().stream().filter(field -> FlagUtils.isOpCodesField(field.getField()))
+        return holders.values().stream().filter(field -> field.getField().isOpCodesField())
                 .findFirst().orElse(null);
     }
 
