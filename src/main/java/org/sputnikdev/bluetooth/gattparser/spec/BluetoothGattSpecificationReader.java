@@ -467,11 +467,19 @@ public class BluetoothGattSpecificationReader {
                     registerConverter(new CharArrayConverter(), PRIORITY_NORMAL);
                     registerConverter(new CollectionConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new MapConverter(getMapper()), PRIORITY_NORMAL);
+
+                    /* Remove to prevent Illegal reflective Access warning in java 11+
                     registerConverter(new TreeMapConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new TreeSetConverter(getMapper()), PRIORITY_NORMAL);
+                    */
+
                     registerConverter(new SingletonCollectionConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new SingletonMapConverter(getMapper()), PRIORITY_NORMAL);
+
+                    /* Remove to prevent Illegal reflective Access warning in java 11+
                     registerConverter(new PropertiesConverter(), PRIORITY_NORMAL);
+                    */
+
                     registerConverter((Converter)new EncodedByteArrayConverter(), PRIORITY_NORMAL);
 
                     registerConverter(new FileConverter(), PRIORITY_NORMAL);
@@ -527,11 +535,12 @@ public class BluetoothGattSpecificationReader {
             xstream.processAnnotations(Properties.class);
             xstream.ignoreUnknownElements();
             xstream.setClassLoader(Characteristic.class.getClassLoader());
+
             return (T) clazz.cast(xstream.fromXML(file));
         } catch (Exception e) {
             logger.error("Could not read file: " + file, e);
+            return null;
         }
-        return null;
     }
 
     private Map<String, String> readRegistryFromCatalogResource(URL serviceRegistry) {
