@@ -11,7 +11,7 @@ public final class GattParserConfiguration implements IGattParserConfiguration {
   private final FloatingPointNumberFormatter IEEE11073FloatingPointNumberFormatter;
   private final BluetoothGattSpecificationReader gattSpecificationReader;
   private final IFlagUtils flagUtils;
-  private BluetoothGattParser gattParser;
+  private volatile BluetoothGattParser gattParser;
 
   GattParserConfiguration(
       RealNumberFormatter twosComplementNumberFormatter,
@@ -30,14 +30,18 @@ public final class GattParserConfiguration implements IGattParserConfiguration {
 
   @Override
   public BluetoothGattSpecificationReader getGattSpecificationReader() {
-    return null;
+    return gattSpecificationReader;
   }
 
   @Override
   public BluetoothGattParser getGattParser() {
     if (gattParser == null) {
-      // initialize it
-      gattParser = new BluetoothGattParser(gattSpecificationReader, new GenericCharacteristicParser(this));
+      synchronized (this) {
+        if (gattParser == null) {
+          // initialize it
+          gattParser = new BluetoothGattParser(gattSpecificationReader, new GenericCharacteristicParser(this));
+        }
+      }
     }
     return gattParser;
   }
