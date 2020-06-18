@@ -469,15 +469,19 @@ public class BluetoothGattSpecificationReader {
                     registerConverter(new MapConverter(getMapper()), PRIORITY_NORMAL);
 
                     /* Remove to prevent Illegal reflective Access warning in java 11+
+                    */
                     registerConverter(new TreeMapConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new TreeSetConverter(getMapper()), PRIORITY_NORMAL);
+                    /*
                     */
 
                     registerConverter(new SingletonCollectionConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new SingletonMapConverter(getMapper()), PRIORITY_NORMAL);
 
                     /* Remove to prevent Illegal reflective Access warning in java 11+
+                    */
                     registerConverter(new PropertiesConverter(), PRIORITY_NORMAL);
+                    /*
                     */
 
                     registerConverter((Converter)new EncodedByteArrayConverter(), PRIORITY_NORMAL);

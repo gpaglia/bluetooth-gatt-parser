@@ -22,11 +22,12 @@ package org.sputnikdev.bluetooth.gattparser.spec;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
-import org.sputnikdev.bluetooth.gattparser.BluetoothGattParserFactory;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.sputnikdev.bluetooth.gattparser.GattParserConfigurationBuilder;
-import org.sputnikdev.bluetooth.gattparser.MockUtils;
 import org.sputnikdev.bluetooth.gattparser.num.RealNumberFormatter;
 
 import java.math.BigInteger;
@@ -41,13 +42,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 public class FlagUtilsTest {
 
     private FlagUtils flagUtils = new FlagUtils();
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private Field flagField;
 
     @Mock
@@ -55,15 +56,30 @@ public class FlagUtilsTest {
 
     @BeforeEach
     public void setUp() {
+        flagField = mock(
+            Field.class,
+            withSettings()
+                .lenient()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
         when(flagField.getName()).thenReturn("fLags");
     }
 
     @Test
     public void testGetReadFlags() throws Exception {
         final RealNumberFormatter formatter = GattParserConfigurationBuilder.DEFAULT_TWOS_COMPLEMENT_NUMBER_FORMATTER.get();
+
+        // bits & bit fields
         List<Bit> bits = new ArrayList<>();
-        when(flagField.getBitField().getBits()).thenReturn(bits);
-        when(flagField.getFormat().getSize()).thenReturn(15);
+        BitField bf = mock(BitField.class);
+        when(bf.getBits()).thenReturn(bits);
+        when(flagField.getBitField()).thenReturn(bf);
+
+        // format
+        FieldFormat fmt = mock(FieldFormat.class);
+        when(fmt.getSize()).thenReturn(15);
+        when(flagField.getFormat()).thenReturn(fmt);
+
         bits.add(MockUtils.mockBit(0, 1, "A"));
         bits.add(MockUtils.mockBit(1, 2, "B"));
         bits.add(MockUtils.mockBit(2, 1, "C"));
@@ -87,7 +103,10 @@ public class FlagUtilsTest {
         enumerations.add(MockUtils.mockEnumeration(1, "C1"));
         enumerations.add(MockUtils.mockEnumeration(2, null));
         enumerations.add(MockUtils.mockEnumeration(3, "C2"));
-        when(flagField.getEnumerations().getEnumerations()).thenReturn(enumerations);
+        Enumerations enums = mock(Enumerations.class);
+        when(enums.getEnumerations()).thenReturn(enumerations);
+
+        when(flagField.getEnumerations()).thenReturn(enums);
 
         assertEquals("C1", flagField.getRequires(new BigInteger("1")));
         assertNull(flagField.getRequires(new BigInteger("2")));
@@ -104,7 +123,10 @@ public class FlagUtilsTest {
         enumerations.add(MockUtils.mockEnumeration(1, "C1", "First"));
         enumerations.add(MockUtils.mockEnumeration(2, "C2", "Second"));
         enumerations.add(MockUtils.mockEnumeration(3, "C2", "Third"));
-        when(flagField.getEnumerations().getEnumerations()).thenReturn(enumerations);
+        Enumerations enums = mock(Enumerations.class);
+        when(enums.getEnumerations()).thenReturn(enumerations);
+
+        when(flagField.getEnumerations()).thenReturn(enums);
 
         assertEquals("C2", flagField.getEnumeration(new BigInteger("2")).get().getRequires());
         assertEquals("Second", flagField.getEnumeration(new BigInteger("2")).get().getValue());
@@ -120,13 +142,18 @@ public class FlagUtilsTest {
         enumerations.add(MockUtils.mockEnumeration(1, "C1"));
         enumerations.add(MockUtils.mockEnumeration(2, null));
         enumerations.add(MockUtils.mockEnumeration(3, "C2"));
-        when(flagField.getEnumerations().getEnumerations()).thenReturn(enumerations);
+        Enumerations enums = mock(Enumerations.class);
+        when(enums.getEnumerations()).thenReturn(enumerations);
+
+        when(flagField.getEnumerations()).thenReturn(enums);
+
         assertTrue(flagField.getAllOpCodes().containsAll(Arrays.asList("C1", "C2")));
     }
 
     @Test
     public void testGetReadFlagsComplex() {
 
+        // bits & bit fields
         List<Bit> bits = new ArrayList<>();
 
         bits.add(MockUtils.mockBit(0, 1, "A"));
@@ -138,8 +165,14 @@ public class FlagUtilsTest {
         bits.add(MockUtils.mockBit(5, 2, "F"));
         bits.add(MockUtils.mockBit(6, 4, "G"));
 
-        when(flagField.getBitField().getBits()).thenReturn(bits);
+        BitField bf = mock(BitField.class);
+        when(bf.getBits()).thenReturn(bits);
+        when(flagField.getBitField()).thenReturn(bf);
+
+        // format
         when(flagField.getFormat()).thenReturn(FieldFormat.valueOf("15bit"));
+
+        // formatters
         when(twosComplementNumberFormatter.deserializeInteger(BitSet.valueOf(new byte[]{0b1}), 1, false)).thenReturn(1);
         when(twosComplementNumberFormatter.deserializeInteger(BitSet.valueOf(new byte[]{0b10}), 2, false)).thenReturn(2);
         when(twosComplementNumberFormatter.deserializeInteger(BitSet.valueOf(new byte[]{0b0}), 1, false)).thenReturn(0);

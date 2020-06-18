@@ -23,6 +23,7 @@ package org.sputnikdev.bluetooth.gattparser.spec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  *
