@@ -27,6 +27,8 @@ import java.math.BigInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -34,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 
 public class GenericCharacteristicParserIntegrationTest {
 
-    private BluetoothGattParser parser = BluetoothGattParserFactory.getDefault();
+    private static BluetoothGattParser parser = BluetoothGattParserFactory.getDefault();
 
     @Test
     public void testWahooHeartRateSensor() {
@@ -274,6 +276,7 @@ public class GenericCharacteristicParserIntegrationTest {
         assertTrue(parser.isKnownCharacteristic("FE95"));
 
         GattResponse response = parser.parse("FE95", temperatureAndHumidity);
+
         assertEquals(23.9, response.get("Temperature").getDouble(), 0.1);
         assertEquals(56.9, response.get("Humidity").getDouble(), 0.1);
 
@@ -285,6 +288,15 @@ public class GenericCharacteristicParserIntegrationTest {
 
         response = parser.parse("FE95", battery);
         assertEquals(100, (int) response.get("Battery").getInteger());
+    }
+
+    @Test
+    public void testXiaomiTempAndHumiditySensorLocalServiceData() {
+        byte[] data = {0x50, 0x20, (byte) 0xAA, 0x01, (byte) 0x94, (byte) 0x96, 0x38, 0x31, 0x34, 0x2D, 0x58, 0x0D, 0x10, 0x04, (byte) 0xF6, 0x00, 0x28, 0x02};
+        GattResponse rsp = parser.parse("0000fe95-0000-1000-8000-00805f9b34fb", data);
+
+        assertThat(rsp.getFieldNames(), containsInAnyOrder("Protocol version", "ProductID", "Frame counter", "MAC", "Event", "Temperature", "Humidity"));
+
     }
 
     @Test
