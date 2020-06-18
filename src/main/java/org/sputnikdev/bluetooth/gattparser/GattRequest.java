@@ -23,6 +23,7 @@ package org.sputnikdev.bluetooth.gattparser;
 import org.sputnikdev.bluetooth.gattparser.spec.BitField;
 import org.sputnikdev.bluetooth.gattparser.spec.Enumeration;
 import org.sputnikdev.bluetooth.gattparser.spec.Field;
+import org.sputnikdev.bluetooth.gattparser.spec.IFlagUtils;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -226,7 +227,8 @@ public class GattRequest {
     List<FieldHolder> getRequiredHolders(String requirement) {
         List<FieldHolder> result = new ArrayList<>();
         for (FieldHolder holder : holders.values()) {
-            if (holder.getField().getRequirements().contains(requirement)) {
+            // Patched by GP -- seems to me a test on Field#getrequirements being null is missing
+            if (holder.getField().getRequirements() != null && holder.getField().getRequirements().contains(requirement)) {
                 result.add(holder);
             }
         }
@@ -248,7 +250,7 @@ public class GattRequest {
     }
 
     private FieldHolder findOpCodesField() {
-        return holders.values().stream().filter(field -> field.getField().isOpCodesField())
+        return holders.values().stream().filter(holder -> holder.getField().isOpCodesField())
                 .findFirst().orElse(null);
     }
 

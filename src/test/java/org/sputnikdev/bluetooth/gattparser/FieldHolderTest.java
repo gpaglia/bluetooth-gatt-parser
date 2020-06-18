@@ -36,6 +36,7 @@ import org.sputnikdev.bluetooth.gattparser.spec.FieldType;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -263,6 +264,16 @@ public class FieldHolderTest {
         enums.add(enumerationSuc);
         when(field.getEnumerations().getEnumerations()).thenReturn(enums);
 
+        when(field.getEnumeration(any(BigInteger.class))).thenAnswer(inv -> {
+            if (inv.getArgument(0).equals(fail)) {
+                return Optional.of(enumerationFail);
+            } else if (inv.getArgument(0).equals(suc)) {
+                return Optional.of(enumerationSuc);
+            } else {
+                return Optional.empty();
+            }
+        });
+
         // testing the Set method
         FieldHolder fieldHolderSet = new FieldHolder(field);
         fieldHolderSet.setEnumeration(enumerationFail);
@@ -295,6 +306,16 @@ public class FieldHolderTest {
         enums.add(enumerationSuc);
         when(field.getEnumerations().getEnumerations()).thenReturn(enums);
 
+        when(field.getEnumeration(any(BigInteger.class))).thenAnswer(inv -> {
+            if (inv.getArgument(0).equals(fail)) {
+                return Optional.of(enumerationFail);
+            } else if (inv.getArgument(0).equals(suc)) {
+                return Optional.of(enumerationSuc);
+            } else {
+                return Optional.empty();
+            }
+        });
+
         byte[] failData = { 0x6b, 0x65, 0x79, 0x20, 0x66, 0x61, 0x69, 0x6c };
         byte[] sucData = { 0x6b, 0x65, 0x79, 0x20, 0x73, 0x75, 0x63 };
         // testing the Set method
@@ -326,13 +347,23 @@ public class FieldHolderTest {
         BigInteger suc = new BigInteger("27995160020870507");
 
         Enumeration enumerationFail = mock(Enumeration.class);
-        when(enumerationFail.getKey()).thenReturn(fail);
+        lenient().when(enumerationFail.getKey()).thenReturn(fail);
         Enumeration enumerationSuc = mock(Enumeration.class);
-        when(enumerationSuc.getKey()).thenReturn(suc);
+        lenient().when(enumerationSuc.getKey()).thenReturn(suc);
 
         enums.add(enumerationFail);
         enums.add(enumerationSuc);
         when(field.getEnumerations().getEnumerations()).thenReturn(enums);
+
+        when(field.getEnumeration(any(BigInteger.class))).thenAnswer(inv -> {
+            if (inv.getArgument(0).equals(fail)) {
+                return Optional.of(enumerationFail);
+            } else if (inv.getArgument(0).equals(suc)) {
+                return Optional.of(enumerationSuc);
+            } else {
+                return Optional.empty();
+            }
+        });
 
         // testing the Set method
         FieldHolder fieldHolderSet = new FieldHolder(field);

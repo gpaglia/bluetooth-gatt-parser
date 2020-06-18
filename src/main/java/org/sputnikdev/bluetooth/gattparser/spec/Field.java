@@ -137,11 +137,11 @@ public class Field {
     }
 
     public boolean isFlagField() {
-        return isFlagsFieldLocal();
+        return IFlagUtils.isFlagsField(this);
     }
 
     public boolean isOpCodesField() {
-        return isOpCodesFieldLocal();
+        return IFlagUtils.isOpCodesField(this);
     }
 
     public boolean hasEnumerations() {
@@ -149,7 +149,7 @@ public class Field {
                 && !enumerations.getEnumerations().isEmpty();
     }
 
-    // Added by GP
+    // Added by GP (from statics in FlagUtils.java)
 
     public String getRequires(BigInteger key) {
         return getEnumeration(key).map(Enumeration::getRequires).orElse(null);
@@ -201,6 +201,8 @@ public class Field {
         return result;
     }
 
+    // package protected methods
+
     int[] parseReadFlags(byte[] raw, int index, RealNumberFormatter formatter) {
         BitSet bitSet = BitSet.valueOf(raw).get(index, index + getFormat().getSize());
         List<Bit> bits = getBitField().getBits();
@@ -213,16 +215,6 @@ public class Field {
         }
         return flags;
     }
-    // private helper methods
 
-    private boolean isFlagsFieldLocal() {
-        return "flags".equalsIgnoreCase(getName()) && getBitField() != null;
-    }
-
-    private boolean isOpCodesFieldLocal() {
-        String name = getName();
-        return ("op code".equalsIgnoreCase(name) || "op codes".equalsIgnoreCase(name))
-            && getEnumerations() != null && !getEnumerations().getEnumerations().isEmpty();
-    }
 
 }
