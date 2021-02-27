@@ -31,32 +31,24 @@ import com.thoughtworks.xstream.converters.extended.*;
 import com.thoughtworks.xstream.converters.reflection.ExternalizableConverter;
 import com.thoughtworks.xstream.converters.reflection.ReflectionConverter;
 import com.thoughtworks.xstream.converters.reflection.SerializableConverter;
-import com.thoughtworks.xstream.core.JVM;
 import com.thoughtworks.xstream.core.util.SelfStreamingInstanceChecker;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
-import com.thoughtworks.xstream.io.xml.StaxDriver;
 import com.thoughtworks.xstream.security.NoTypePermission;
 import com.thoughtworks.xstream.security.WildcardTypePermission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Writer;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -74,8 +66,10 @@ public class BluetoothGattSpecificationReader {
     private static final String SPEC_SERVICES_FOLDER_NAME = "service";
     private static final String SPEC_CHARACTERISTICS_FOLDER_NAME = "characteristic";
     private static final String SPEC_REGISTRY_FILE_NAME = "gatt_spec_registry.json";
+    @SuppressWarnings("unused")
     private static final String CLASSPATH_SPEC_FULL_SERVICES_FOLDER_NAME = SPEC_ROOT_FOLDER_NAME + "/"
             + SPEC_SERVICES_FOLDER_NAME;
+    @SuppressWarnings("unused")
     private static final String CLASSPATH_SPEC_FULL_CHARACTERISTICS_FOLDER_NAME = SPEC_ROOT_FOLDER_NAME + "/"
             + SPEC_CHARACTERISTICS_FOLDER_NAME;
     private static final String CLASSPATH_SPEC_FULL_CHARACTERISTIC_FILE_NAME =
@@ -279,7 +273,7 @@ public class BluetoothGattSpecificationReader {
         characteristicsTypeRegistry.putAll(loadedTypeRegistry);
     }
 
-    Set<String> getRequirements(List<Field> fields, Field flags) {
+    Set<String> getRequirements(List<Field> fields, @SuppressWarnings("unused") Field flags) {
         Set<String> result = new HashSet<>();
         for (Iterator<Field> iterator = fields.iterator(); iterator.hasNext();) {
             Field field = iterator.next();
@@ -406,6 +400,7 @@ public class BluetoothGattSpecificationReader {
     }
 
     private <T> T getSpec(URL file, Class<T> clazz) {
+        //noinspection CommentedOutCode
         try {
             /*
             XStream xstream = new XStream(new DomDriver());
@@ -415,6 +410,7 @@ public class BluetoothGattSpecificationReader {
             // end GP Fix
             */
             // ***
+            //noinspection CommentedOutCode
             XStream xstream = new XStream(new DomDriver() {
                 @Override
                 public HierarchicalStreamWriter createWriter(Writer out) {
@@ -469,19 +465,15 @@ public class BluetoothGattSpecificationReader {
                     registerConverter(new MapConverter(getMapper()), PRIORITY_NORMAL);
 
                     /* Remove to prevent Illegal reflective Access warning in java 11+
-                    */
                     registerConverter(new TreeMapConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new TreeSetConverter(getMapper()), PRIORITY_NORMAL);
-                    /*
                     */
 
                     registerConverter(new SingletonCollectionConverter(getMapper()), PRIORITY_NORMAL);
                     registerConverter(new SingletonMapConverter(getMapper()), PRIORITY_NORMAL);
 
                     /* Remove to prevent Illegal reflective Access warning in java 11+
-                    */
                     registerConverter(new PropertiesConverter(), PRIORITY_NORMAL);
-                    /*
                     */
 
                     registerConverter((Converter)new EncodedByteArrayConverter(), PRIORITY_NORMAL);
@@ -540,7 +532,7 @@ public class BluetoothGattSpecificationReader {
             xstream.ignoreUnknownElements();
             xstream.setClassLoader(Characteristic.class.getClassLoader());
 
-            return (T) clazz.cast(xstream.fromXML(file));
+            return clazz.cast(xstream.fromXML(file));
         } catch (Exception e) {
             logger.error("Could not read file: " + file, e);
             return null;
@@ -558,7 +550,7 @@ public class BluetoothGattSpecificationReader {
 
         JsonReader jsonReader = null;
         try {
-            jsonReader = new JsonReader(new InputStreamReader(serviceRegistry.openStream(), "UTF-8"));
+            jsonReader = new JsonReader(new InputStreamReader(serviceRegistry.openStream(), StandardCharsets.UTF_8));
             return gson.fromJson(jsonReader, type);
         } catch (IOException e) {
             throw new IllegalStateException(e);
